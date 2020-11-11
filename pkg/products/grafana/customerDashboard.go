@@ -102,7 +102,7 @@ const CustomerMonitoringGrafanaRateLimitingJSON = `{
       "tableColumn": "",
       "targets": [
         {
-          "expr": "increase(ratelimit_service_rate_limit_apicast_ratelimit_generic_key_slowpath_total_hits[1m])",
+          "expr": "increase(ratelimit_service_rate_limit_apicast_ratelimit_generic_key_slowpath_total_hits[1m] * (60 - 30) / 60)",
           "instant": true,
           "refId": "A"
         }
@@ -148,7 +148,93 @@ const CustomerMonitoringGrafanaRateLimitingJSON = `{
         "x": 3,
         "y": 1
       },
-      "id": 6,
+      "id": 10,
+      "interval": null,
+      "links": [],
+      "mappingType": 1,
+      "mappingTypes": [
+        {
+          "name": "value to text",
+          "value": 1
+        },
+        {
+          "name": "range to text",
+          "value": 2
+        }
+      ],
+      "maxDataPoints": 100,
+      "nullPointMode": "connected",
+      "nullText": null,
+      "options": {},
+      "postfix": "",
+      "postfixFontSize": "50%",
+      "prefix": "",
+      "prefixFontSize": "50%",
+      "rangeMaps": [
+        {
+          "from": "null",
+          "text": "N/A",
+          "to": "null"
+        }
+      ],
+      "sparkline": {
+        "fillColor": "rgba(31, 118, 189, 0.18)",
+        "full": false,
+        "lineColor": "rgb(31, 120, 193)",
+        "show": false,
+        "ymax": null,
+        "ymin": null
+      },
+      "tableColumn": "",
+      "targets": [
+        {
+          "expr": "increase(ratelimit_service_rate_limit_apicast_ratelimit_generic_key_slowpath_over_limit[1m] *  (60 - 30) / 60)",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "thresholds": "1",
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Last 1 Minute - Rejected",
+      "type": "singlestat",
+      "valueFontSize": "80%",
+      "valueMaps": [
+        {
+          "op": "=",
+          "text": "N/A",
+          "value": "null"
+        }
+      ],
+      "valueName": "avg"
+    },
+    {
+      "cacheTimeout": null,
+      "colorBackground": false,
+      "colorPostfix": false,
+      "colorValue": false,
+      "colors": [
+        "#299c46",
+        "rgba(237, 129, 40, 0.89)",
+        "#d44a3a"
+      ],
+      "datasource": null,
+      "format": "none",
+      "gauge": {
+        "maxValue": 100,
+        "minValue": 0,
+        "show": false,
+        "thresholdLabels": false,
+        "thresholdMarkers": true
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 3,
+        "x": 6,
+        "y": 1
+      },
+      "id": 22,
+>>>>>>> 46e2f7a2... fixing typo in header
       "interval": "",
       "links": [],
       "mappingType": 1,
@@ -255,10 +341,10 @@ const CustomerMonitoringGrafanaRateLimitingJSON = `{
       "steppedLine": false,
       "targets": [
         {
-          "expr": "increase(ratelimit_service_rate_limit_apicast_ratelimit_generic_key_slowpath_total_hits[1m])",
+          "expr": "increase(ratelimit_service_rate_limit_apicast_ratelimit_generic_key_slowpath_total_hits[1m]) *  (60 - 30) / 60",
           "instant": false,
           "interval": "30s",
-          "legendFormat": "No. of Reqests",
+          "legendFormat": "No. of Requests",
           "refId": "A"
         },
         {
