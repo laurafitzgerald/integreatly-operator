@@ -7,7 +7,7 @@ import (
 	"github.com/integr8ly/integreatly-operator/pkg/resources/events"
 
 	monitoringv1alpha1 "github.com/integr8ly/application-monitoring-operator/pkg/apis/applicationmonitoring/v1alpha1"
-	croResources "github.com/integr8ly/cloud-resource-operator/pkg/client"
+	croService "github.com/integr8ly/cloud-resource-operator/pkg/client"
 	v1 "k8s.io/api/core/v1"
 
 	"github.com/integr8ly/integreatly-operator/pkg/resources/constants"
@@ -282,9 +282,14 @@ func (r *Reconciler) reconcileViewFusePerms(ctx context.Context, client k8sclien
 func (r *Reconciler) reconcileCloudResources(ctx context.Context, rhmi *integreatlyv1alpha1.RHMI, client k8sclient.Client) (integreatlyv1alpha1.StatusPhase, error) {
 	r.logger.Info("Reconciling cloud resources for Fuse")
 
+	cs := croService.NewCloudResourceService(&croService.CloudResourceSpec{
+		Ctx:    ctx,
+		Client: client,
+	})
+
 	pgName := fmt.Sprintf("%s%s", constants.FusePostgresPrefix, rhmi.Name)
 	ns := rhmi.Namespace
-	postgres, err := croResources.ReconcilePostgres(ctx, client, defaultInstallationNamespace, rhmi.Spec.Type, croResources.TierProduction, pgName, ns, pgName, ns, func(cr metav1.Object) error {
+	postgres, err := cs.ReconcilePostgres(defaultInstallationNamespace, rhmi.Spec.Type, croService.TierProduction, pgName, ns, pgName, ns, func(cr metav1.Object) error {
 		owner.AddIntegreatlyOwnerAnnotations(cr, rhmi)
 		return nil
 	})

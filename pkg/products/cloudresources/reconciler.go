@@ -24,7 +24,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/rds"
 	crov1alpha1 "github.com/integr8ly/cloud-resource-operator/pkg/apis/integreatly/v1alpha1"
 	crov1alpha1Types "github.com/integr8ly/cloud-resource-operator/pkg/apis/integreatly/v1alpha1/types"
-	croUtil "github.com/integr8ly/cloud-resource-operator/pkg/client"
+	croService "github.com/integr8ly/cloud-resource-operator/pkg/client"
 	"github.com/integr8ly/cloud-resource-operator/pkg/providers/aws"
 
 	integreatlyv1alpha1 "github.com/integr8ly/integreatly-operator/pkg/apis/integreatly/v1alpha1"
@@ -338,8 +338,13 @@ func (r *Reconciler) reconcileBackupsStorage(ctx context.Context, installation *
 		return integreatlyv1alpha1.PhaseCompleted, nil
 	}
 
+	cs := croService.NewCloudResourceService(&croService.CloudResourceSpec{
+		Ctx:    ctx,
+		Client: client,
+	})
+
 	blobStorageName := fmt.Sprintf("%s%s", constants.BackupsBlobStoragePrefix, installation.Name)
-	blobStorage, err := croUtil.ReconcileBlobStorage(ctx, client, defaultInstallationNamespace, installation.Spec.Type, croUtil.TierProduction, blobStorageName, installation.Namespace, r.ConfigManager.GetBackupsSecretName(), installation.Namespace, func(cr metav1.Object) error {
+	blobStorage, err := cs.ReconcileBlobStorage(defaultInstallationNamespace, installation.Spec.Type, croService.TierProduction, blobStorageName, installation.Namespace, r.ConfigManager.GetBackupsSecretName(), installation.Namespace, func(cr metav1.Object) error {
 		return nil
 	})
 	if err != nil {
@@ -403,17 +408,6 @@ func overrideStrategyConfig(resourceType string, tier string, croStrategyConfig 
 // parameter. If the value has already been set, or if the secret is not found,
 // it does nothing
 func (r *Reconciler) reconcileCIDRValue(ctx context.Context, client k8sclient.Client) error {
-	cidrValue, ok, err := addon.GetStringParameter(ctx, client, r.installation.Namespace, "cidr-range")
-	if err != nil {
-		return err
-	}
-
-	//!ok means the param wasn't found so we want to default rather than return
-	//but don't do it until the installation object is more than a minute old in case the secret is slow to create
-	if !ok || cidrValue == "" && r.installation.ObjectMeta.CreationTimestamp.Time.Before(time.Now().Add(-(1*time.Minute))) {
-		cidrValue = "10.1.0.0/16"
-	}
-
 	cfgMap := &corev1.ConfigMap{}
 
 	if err := client.Get(ctx, k8sclient.ObjectKey{
@@ -443,6 +437,25 @@ func (r *Reconciler) reconcileCIDRValue(ctx context.Context, client k8sclient.Cl
 		if network.Production.CreateStrategy.CidrBlock != "" {
 			return nil
 		}
+	}
+	cidrValue, ok, err := addon.GetStringParameter(ctx, client, r.installation.Namespace, "cidr-range")
+	if err != nil {
+		return err
+	}
+
+	cs := croService.NewCloudResourceService(&croService.CloudResourceSpec{
+		Ctx:    ctx,
+		Client: client,
+	})
+
+	//!ok means the param wasn't found so we want to default rather than return
+	//but don't do it until the installation object is more than a minute old in case the secret is slow to create
+	if !ok || cidrValue == "" && r.installation.ObjectMeta.CreationTimestamp.Time.Before(time.Now().Add(-(1*time.Minute))) {
+		cidrValue, err = cs.GetNonOverlappingCIDR(r.installation.Namespace)
+		if err != nil {
+			return err
+		}
+
 	}
 
 	network.Production.CreateStrategy.CidrBlock = cidrValue

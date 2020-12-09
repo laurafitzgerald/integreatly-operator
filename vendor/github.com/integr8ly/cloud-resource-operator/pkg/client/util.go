@@ -16,7 +16,7 @@ import (
 type modifyResourceFunc func(cr metav1.Object) error
 
 // ReconcileBlobStorage creates or updates a blob storage custom resource
-func ReconcileBlobStorage(ctx context.Context, client client.Client, productName, deploymentType, tier, name, ns, secretName, secretNs string, modifyFunc modifyResourceFunc) (*v1alpha1.BlobStorage, error) {
+func (c CloudResourceService)  ReconcileBlobStorage(productName, deploymentType, tier, name, ns, secretName, secretNs string, modifyFunc modifyResourceFunc) (*v1alpha1.BlobStorage, error) {
 	bs := &v1alpha1.BlobStorage{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -37,7 +37,7 @@ func ReconcileBlobStorage(ctx context.Context, client client.Client, productName
 	}
 
 	// Create or update the resource
-	_, err := controllerutil.CreateOrUpdate(ctx, client, bs, func() error {
+	_, err := controllerutil.CreateOrUpdate(c.Ctx, c.Client, bs, func() error {
 		bs.Spec.Type = deploymentType
 		bs.Spec.Tier = tier
 		bs.Spec.SecretRef = &croType.SecretRef{
@@ -54,7 +54,7 @@ func ReconcileBlobStorage(ctx context.Context, client client.Client, productName
 }
 
 // ReconcilePostgres creates or updates a postgres custom resource
-func ReconcilePostgres(ctx context.Context, client client.Client, productName, deploymentType, tier, name, ns, secretName, secretNs string, modifyFunc modifyResourceFunc) (*v1alpha1.Postgres, error) {
+func (c CloudResourceService) ReconcilePostgres(ctx context.Context, client client.Client, productName, deploymentType, tier, name, ns, secretName, secretNs string, modifyFunc modifyResourceFunc) (*v1alpha1.Postgres, error) {
 	pg := &v1alpha1.Postgres{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -92,7 +92,7 @@ func ReconcilePostgres(ctx context.Context, client client.Client, productName, d
 }
 
 // ReconcileRedis creates or updates a redis custom resource
-func ReconcileRedis(ctx context.Context, client client.Client, productName, deploymentType, tier, name, ns, secretName, secretNs string, modifyFunc modifyResourceFunc) (*v1alpha1.Redis, error) {
+func (c CloudResourceService) ReconcileRedis(ctx context.Context, client client.Client, productName, deploymentType, tier, name, ns, secretName, secretNs string, modifyFunc modifyResourceFunc) (*v1alpha1.Redis, error) {
 	r := &v1alpha1.Redis{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,

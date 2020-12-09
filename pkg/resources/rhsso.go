@@ -13,7 +13,7 @@ import (
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	croUtil "github.com/integr8ly/cloud-resource-operator/pkg/client"
+	croService "github.com/integr8ly/cloud-resource-operator/pkg/client"
 
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -30,8 +30,13 @@ const (
 
 //ReconcileRHSSOPostgresCredentials Provisions postgres and creates external database secret based on Installation CR, secret will be nil while the postgres instance is provisioning
 func ReconcileRHSSOPostgresCredentials(ctx context.Context, installation *integreatlyv1alpha1.RHMI, serverClient k8sclient.Client, name, ns, nsPostfix string) (*crov1.Postgres, error) {
+	cs := croService.NewCloudResourceService(&croService.CloudResourceSpec{
+		Ctx:    ctx,
+		Client: serverClient,
+	})
+
 	postgresNS := installation.Namespace
-	postgres, err := croUtil.ReconcilePostgres(ctx, serverClient, nsPostfix, installation.Spec.Type, croUtil.TierProduction, name, postgresNS, name, postgresNS, func(cr metav1.Object) error {
+	postgres, err := cs.ReconcilePostgres(nsPostfix, installation.Spec.Type, croService.TierProduction, name, postgresNS, name, postgresNS, func(cr metav1.Object) error {
 		owner.AddIntegreatlyOwnerAnnotations(cr, installation)
 		return nil
 	})

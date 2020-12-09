@@ -14,14 +14,12 @@ require (
 	github.com/aws/aws-sdk-go v1.34.5
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/coreos/prometheus-operator v0.40.0
-	github.com/docker/spdystream v0.0.0-20181023171402-6480d4af844c // indirect
 	github.com/eclipse/che-operator v0.0.0-20191122191946-81d08d3f0fde
 	github.com/envoyproxy/go-control-plane v0.9.5
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
 	github.com/go-openapi/spec v0.19.9
 	github.com/golang/protobuf v1.4.2
 	github.com/google/go-querystring v1.0.0
-	github.com/gregjones/httpcache v0.0.0-20190203031600-7a902570cb17 // indirect
 	github.com/headzoo/surf v1.0.0
 	github.com/headzoo/ut v0.0.0-20181013193318-a13b5a7a02ca // indirect
 	github.com/integr8ly/application-monitoring-operator v1.4.0
@@ -32,8 +30,6 @@ require (
 	github.com/jstemmer/go-junit-report v0.9.1
 	github.com/keycloak/keycloak-operator v0.0.0-20201021091505-b576fa07b78a
 	github.com/matryer/moq v0.1.3
-	github.com/mattn/go-colorable v0.1.7 // indirect
-	github.com/mattn/go-runewidth v0.0.9 // indirect
 	github.com/openshift/api v3.9.1-0.20191031084152-11eee842dafd+incompatible
 	github.com/openshift/client-go v3.9.0+incompatible
 	github.com/openshift/cluster-samples-operator v0.0.0-20191113195805-9e879e661d71
@@ -48,7 +44,6 @@ require (
 	github.com/syndesisio/syndesis/install/operator v0.0.0-20200921104849-b99c54c8a481
 	golang.org/x/net v0.0.0-20200625001655-4c5254603344
 	golang.org/x/sync v0.0.0-20200625203802-6e8e738ad208
-	golang.org/x/sys v0.0.0-20200625212154-ddb9806d33ae // indirect
 	google.golang.org/protobuf v1.23.0
 	gopkg.in/yaml.v2 v2.3.0
 	k8s.io/api v0.18.6
@@ -97,3 +92,5 @@ replace (
 	github.com/operator-framework/operator-registry => github.com/operator-framework/operator-registry v1.6.2-0.20200330184612-11867930adb5
 	github.com/operator-framework/operator-sdk => github.com/operator-framework/operator-sdk v0.17.1
 )
+
+replace github.com/integr8ly/cloud-resource-operator => /Users/lfitzger/go/src/github.com/integr8ly/cloud-resource-operator

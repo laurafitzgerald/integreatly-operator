@@ -25,7 +25,7 @@ import (
 	"github.com/integr8ly/integreatly-operator/pkg/resources/owner"
 
 	cro1types "github.com/integr8ly/cloud-resource-operator/pkg/apis/integreatly/v1alpha1/types"
-	croUtil "github.com/integr8ly/cloud-resource-operator/pkg/client"
+	croService "github.com/integr8ly/cloud-resource-operator/pkg/client"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -277,16 +277,18 @@ func (r *Reconciler) reconcileStandardAuthenticationService(ctx context.Context,
 
 	const postgresqlName string = constants.AMQAuthServicePostgres
 
+	cs := croService.NewCloudResourceService(&croService.CloudResourceSpec{
+		Ctx:    ctx,
+		Client: serverClient,
+	})
 	// Get CRO to create a Postgresql in the integreatly operator namespace. The
 	// CRO operator SA only has permissions to create the secret in the intly
 	// operator namespace, so it will be first created there, then copied into
 	// the enmasse namespace.
-	postgres, err := croUtil.ReconcilePostgres(
-		ctx,
-		serverClient,
+	postgres, err := cs.ReconcilePostgres(
 		defaultInstallationNamespace,
 		"workshop", // workshop here so that it creates in-cluster postgresql
-		croUtil.TierProduction,
+		croService.TierProduction,
 		postgresqlName,
 		r.inst.Namespace,
 		postgresqlName,

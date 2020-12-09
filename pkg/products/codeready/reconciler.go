@@ -17,7 +17,7 @@ import (
 	chev1 "github.com/eclipse/che-operator/pkg/apis/org/v1"
 
 	crov1alpha1 "github.com/integr8ly/cloud-resource-operator/pkg/apis/integreatly/v1alpha1"
-	croUtil "github.com/integr8ly/cloud-resource-operator/pkg/client"
+	croService "github.com/integr8ly/cloud-resource-operator/pkg/client"
 
 	monitoringv1alpha1 "github.com/integr8ly/application-monitoring-operator/pkg/apis/applicationmonitoring/v1alpha1"
 	integreatlyv1alpha1 "github.com/integr8ly/integreatly-operator/pkg/apis/integreatly/v1alpha1"
@@ -190,9 +190,13 @@ func (r *Reconciler) reconcileExternalDatasources(ctx context.Context, serverCli
 	logrus.Infof("Reconciling external datastore")
 	ns := r.installation.Namespace
 
+	cs := croService.NewCloudResourceService(&croService.CloudResourceSpec{
+		Ctx:    ctx,
+		Client: serverClient,
+	})
 	// setup postgres custom resource
 	postgresName := fmt.Sprintf("%s%s", constants.CodeReadyPostgresPrefix, r.installation.Name)
-	postgres, err := croUtil.ReconcilePostgres(ctx, serverClient, defaultInstallationNamespace, r.installation.Spec.Type, croUtil.TierProduction, postgresName, ns, postgresName, ns, func(cr metav1.Object) error {
+	postgres, err := cs.ReconcilePostgres(defaultInstallationNamespace, r.installation.Spec.Type, croService.TierProduction, postgresName, ns, postgresName, ns, func(cr metav1.Object) error {
 		owner.AddIntegreatlyOwnerAnnotations(cr, r.installation)
 		return nil
 	})

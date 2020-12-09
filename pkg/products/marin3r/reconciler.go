@@ -10,7 +10,7 @@ import (
 
 	prometheus "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/integr8ly/cloud-resource-operator/pkg/apis/integreatly/v1alpha1/types"
-	croUtil "github.com/integr8ly/cloud-resource-operator/pkg/client"
+	croService "github.com/integr8ly/cloud-resource-operator/pkg/client"
 	"github.com/integr8ly/integreatly-operator/pkg/products/grafana"
 	"github.com/integr8ly/integreatly-operator/pkg/resources/owner"
 	appsv1 "k8s.io/api/apps/v1"
@@ -273,9 +273,13 @@ func (r *Reconciler) reconcileRedis(ctx context.Context, client k8sclient.Client
 	logrus.Info("Creating backend redis instance in marine3r reconcile")
 
 	ns := r.installation.Namespace
+	cs := croService.NewCloudResourceService(&croService.CloudResourceSpec{
+		Ctx:    ctx,
+		Client: client,
+	})
 
 	redisName := fmt.Sprintf("%s%s", constants.RateLimitRedisPrefix, r.installation.Name)
-	rateLimitRedis, err := croUtil.ReconcileRedis(ctx, client, defaultInstallationNamespace, r.installation.Spec.Type, croUtil.TierProduction, redisName, ns, redisName, ns, func(cr metav1.Object) error {
+	rateLimitRedis, err := cs.ReconcileRedis(defaultInstallationNamespace, r.installation.Spec.Type, croService.TierProduction, redisName, ns, redisName, ns, func(cr metav1.Object) error {
 		owner.AddIntegreatlyOwnerAnnotations(cr, r.installation)
 		return nil
 	})

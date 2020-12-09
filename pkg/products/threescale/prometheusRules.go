@@ -219,7 +219,7 @@ func (r *Reconciler) newAlertReconciler() resources.AlertReconciler {
 						Alert: "ThreeScaleDeveloperUIBBT",
 						Annotations: map[string]string{
 							"sop_url": resources.SopUrlThreeScaleDeveloperUIBBT,
-							"message": "3Scale Developer UI Blackbox Target: If this console isunavailable, the clients developers are unable signup or perform API management.",
+							"message": "3Scale Developer UI Blackbox Target: If this console is unavailable, the clients developers are unable signup or perform API management.",
 						},
 						Expr:   intstr.FromString("absent(probe_success{job='blackbox',service='3scale-developer-console-ui'} == 1)"),
 						For:    "5m",

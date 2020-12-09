@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"time"
 
-	croUtil "github.com/integr8ly/cloud-resource-operator/pkg/client"
+	croService "github.com/integr8ly/cloud-resource-operator/pkg/client"
 	"github.com/sirupsen/logrus"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -59,6 +59,10 @@ func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 		scheme:  mgr.GetScheme(),
 		context: ctx,
 		cancel:  cancel,
+		croService: croService.CloudResourceService{
+			Ctx:    ctx,
+			Client: mgr.GetClient(),
+		},
 	}
 }
 
@@ -86,10 +90,11 @@ var _ reconcile.Reconciler = &ReconcileRHMIConfig{}
 type ReconcileRHMIConfig struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
-	client  client.Client
-	scheme  *runtime.Scheme
-	context context.Context
-	cancel  context.CancelFunc
+	client     client.Client
+	scheme     *runtime.Scheme
+	context    context.Context
+	cancel     context.CancelFunc
+	croService croService.CloudResourceService
 }
 
 // Reconcile reads that state of the cluster for a RHMIConfig object and makes changes based on the state read
@@ -169,14 +174,14 @@ func (r *ReconcileRHMIConfig) ReconcileCloudResourceStrategies(config *integreat
 	}
 
 	// build time config expected by CRO
-	timeConfig := &croUtil.StrategyTimeConfig{
+	timeConfig := &croService.StrategyTimeConfig{
 		BackupStartTime:      backupApplyOn,
 		MaintenanceStartTime: maintenanceApplyFrom,
 	}
 
 	// reconcile cro strategy config map, RHMI operator does not care what infrastructure the cluster is running in
 	// as we support different cloud providers this CRO Reconcile Function will ensure the correct infrastructure strategies are provisioned
-	if err := croUtil.ReconcileStrategyMaps(r.context, r.client, timeConfig, croUtil.TierProduction, config.Namespace); err != nil {
+	if err := r.croService.ReconcileStrategyMaps(timeConfig, croService.TierProduction, config.Namespace); err != nil {
 		return fmt.Errorf("failure to reconcile aws strategy map : %v", err)
 	}
 

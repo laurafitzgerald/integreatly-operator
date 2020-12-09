@@ -118,14 +118,14 @@ func (t *ThreeScale) GetReplicasConfig(inst *integreatlyv1alpha1.RHMI) map[strin
 		}
 	}
 	return map[string]int64{
-		"systemApp":       3,
-		"systemSidekiq":   3,
-		"apicastProd":     6,
-		"apicastStage":    3,
-		"backendListener": 5,
-		"backendWorker":   4,
+		"systemApp":       1,
+		"systemSidekiq":   1,
+		"apicastProd":     1,
+		"apicastStage":    1,
+		"backendListener": 1,
+		"backendWorker":   1,
 		"backendCron":     1,
-		"zyncApp":         3,
-		"zyncQue":         3,
+		"zyncApp":         1,
+		"zyncQue":         1,
 	}
 }

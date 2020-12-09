@@ -21,7 +21,7 @@ import (
 	upsv1alpha1 "github.com/aerogear/unifiedpush-operator/pkg/apis/push/v1alpha1"
 
 	monitoringv1alpha1 "github.com/integr8ly/application-monitoring-operator/pkg/apis/applicationmonitoring/v1alpha1"
-	croUtil "github.com/integr8ly/cloud-resource-operator/pkg/client"
+	croService "github.com/integr8ly/cloud-resource-operator/pkg/client"
 	integreatlyv1alpha1 "github.com/integr8ly/integreatly-operator/pkg/apis/integreatly/v1alpha1"
 	"github.com/integr8ly/integreatly-operator/pkg/config"
 	"github.com/integr8ly/integreatly-operator/pkg/resources"
@@ -185,10 +185,15 @@ func (r *Reconciler) reconcileComponents(ctx context.Context, installation *inte
 	logrus.Info("Reconciling external postgres")
 	ns := installation.Namespace
 
+	cs := croService.NewCloudResourceService(&croService.CloudResourceSpec{
+		Ctx:    ctx,
+		Client: client,
+	})
+
 	// setup postgres custom resource
 	// this will be used by the cloud resources operator to provision a postgres instance
 	postgresName := fmt.Sprintf("%s%s", constants.UPSPostgresPrefix, installation.Name)
-	postgres, err := croUtil.ReconcilePostgres(ctx, client, defaultInstallationNamespace, installation.Spec.Type, tier, postgresName, ns, postgresName, ns, func(cr metav1.Object) error {
+	postgres, err := cs.ReconcilePostgres(defaultInstallationNamespace, installation.Spec.Type, tier, postgresName, ns, postgresName, ns, func(cr metav1.Object) error {
 		owner.AddIntegreatlyOwnerAnnotations(cr, installation)
 		return nil
 	})

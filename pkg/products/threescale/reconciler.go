@@ -39,7 +39,7 @@ import (
 
 	crov1 "github.com/integr8ly/cloud-resource-operator/pkg/apis/integreatly/v1alpha1"
 	"github.com/integr8ly/cloud-resource-operator/pkg/apis/integreatly/v1alpha1/types"
-	croUtil "github.com/integr8ly/cloud-resource-operator/pkg/client"
+	croService "github.com/integr8ly/cloud-resource-operator/pkg/client"
 	userHelper "github.com/integr8ly/integreatly-operator/pkg/resources/user"
 
 	threescalev1 "github.com/3scale/3scale-operator/pkg/apis/apps/v1alpha1"
@@ -1123,9 +1123,14 @@ func (r *Reconciler) reconcileBlobStorage(ctx context.Context, serverClient k8sc
 	logrus.Info("Reconciling blob storage")
 	ns := r.installation.Namespace
 
+	cs := croService.NewCloudResourceService(&croService.CloudResourceSpec{
+		Ctx:    ctx,
+		Client: serverClient,
+	})
+
 	// setup blob storage cr for the cloud resource operator
 	blobStorageName := fmt.Sprintf("%s%s", constants.ThreeScaleBlobStoragePrefix, r.installation.Name)
-	blobStorage, err := croUtil.ReconcileBlobStorage(ctx, serverClient, defaultInstallationNamespace, r.installation.Spec.Type, croUtil.TierProduction, blobStorageName, ns, blobStorageName, ns, func(cr metav1.Object) error {
+	blobStorage, err := cs.ReconcileBlobStorage(defaultInstallationNamespace, r.installation.Spec.Type, croService.TierProduction, blobStorageName, ns, blobStorageName, ns, func(cr metav1.Object) error {
 		owner.AddIntegreatlyOwnerAnnotations(cr, r.installation)
 		return nil
 	})
@@ -1202,11 +1207,15 @@ func (r *Reconciler) reconcileExternalDatasources(ctx context.Context, serverCli
 	logrus.Info("Reconciling external datastores")
 	ns := r.installation.Namespace
 
+	cs := croService.NewCloudResourceService(&croService.CloudResourceSpec{
+		Ctx:    ctx,
+		Client: serverClient,
+	})
 	// setup backend redis custom resource
 	// this will be used by the cloud resources operator to provision a redis instance
 	logrus.Info("Creating backend redis instance")
 	backendRedisName := fmt.Sprintf("%s%s", constants.ThreeScaleBackendRedisPrefix, r.installation.Name)
-	backendRedis, err := croUtil.ReconcileRedis(ctx, serverClient, defaultInstallationNamespace, r.installation.Spec.Type, croUtil.TierProduction, backendRedisName, ns, backendRedisName, ns, func(cr metav1.Object) error {
+	backendRedis, err := cs.ReconcileRedis(defaultInstallationNamespace, r.installation.Spec.Type, croService.TierProduction, backendRedisName, ns, backendRedisName, ns, func(cr metav1.Object) error {
 		owner.AddIntegreatlyOwnerAnnotations(cr, r.installation)
 		return nil
 	})
@@ -1218,7 +1227,7 @@ func (r *Reconciler) reconcileExternalDatasources(ctx context.Context, serverCli
 	// this will be used by the cloud resources operator to provision a redis instance
 	logrus.Info("Creating system redis instance")
 	systemRedisName := fmt.Sprintf("%s%s", constants.ThreeScaleSystemRedisPrefix, r.installation.Name)
-	systemRedis, err := croUtil.ReconcileRedis(ctx, serverClient, defaultInstallationNamespace, r.installation.Spec.Type, croUtil.TierProduction, systemRedisName, ns, systemRedisName, ns, func(cr metav1.Object) error {
+	systemRedis, err := cs.ReconcileRedis(defaultInstallationNamespace, r.installation.Spec.Type, croService.TierProduction, systemRedisName, ns, systemRedisName, ns, func(cr metav1.Object) error {
 		owner.AddIntegreatlyOwnerAnnotations(cr, r.installation)
 		return nil
 	})
@@ -1230,7 +1239,7 @@ func (r *Reconciler) reconcileExternalDatasources(ctx context.Context, serverCli
 	// this will be used by the cloud resources operator to provision a postgres instance
 	logrus.Info("Creating postgres instance")
 	postgresName := fmt.Sprintf("%s%s", constants.ThreeScalePostgresPrefix, r.installation.Name)
-	postgres, err := croUtil.ReconcilePostgres(ctx, serverClient, defaultInstallationNamespace, r.installation.Spec.Type, croUtil.TierProduction, postgresName, ns, postgresName, ns, func(cr metav1.Object) error {
+	postgres, err := cs.ReconcilePostgres(defaultInstallationNamespace, r.installation.Spec.Type, croService.TierProduction, postgresName, ns, postgresName, ns, func(cr metav1.Object) error {
 		owner.AddIntegreatlyOwnerAnnotations(cr, r.installation)
 		return nil
 	})
