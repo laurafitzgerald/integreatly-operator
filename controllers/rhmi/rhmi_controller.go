@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"github.com/integr8ly/integreatly-operator/pkg/resources/sku"
 	"os"
 	"reflect"
 	"strconv"
@@ -231,6 +232,22 @@ func (r *RHMIReconciler) Reconcile(request ctrl.Request) (ctrl.Result, error) {
 		installationCfgMap = installation.Spec.NamespacePrefix + DefaultInstallationConfigMapName
 	}
 
+	// get a configmap from the cluster
+	cm := &corev1.ConfigMap{}
+	err = r.Get(context.TODO(), types.NamespacedName{Namespace: request.Namespace, Name: "sku-config"}, cm)
+	if err != nil {
+		return retryRequeue, errors.Wrap(err, "Error getting sku config map")
+
+	}
+
+	installationSKU := &sku.SKU{}
+	if installation.Spec.Type == string(rhmiv1alpha1.InstallationTypeManagedApi) {
+		installationSKU, err = sku.GetSKU("DEV_SKU", cm)
+		if err != nil {
+			return retryRequeue, err
+		}
+	}
+
 	cssreAlertingEmailAddress := os.Getenv(alertingEmailAddressEnvName)
 	if installation.Spec.AlertingEmailAddresses.CSSRE == "" && cssreAlertingEmailAddress != "" {
 		log.Info("Adding CS-SRE alerting email address to RHMI CR")
@@ -343,7 +360,7 @@ func (r *RHMIReconciler) Reconcile(request ctrl.Request) (ctrl.Result, error) {
 		if stage.Name == rhmiv1alpha1.BootstrapStage {
 			stagePhase, err = r.bootstrapStage(installation, configManager, stageLog)
 		} else {
-			stagePhase, err = r.processStage(installation, &stage, configManager, stageLog)
+			stagePhase, err = r.processStage(installation, &stage, configManager, installationSKU, stageLog)
 		}
 
 		if installation.Status.Stages == nil {
@@ -379,7 +396,7 @@ func (r *RHMIReconciler) Reconcile(request ctrl.Request) (ctrl.Result, error) {
 
 	// Entered on every reconcile where all stages reported complete
 	if !installInProgress {
-		installation.Status.Stage = rhmiv1alpha1.StageName("complete")
+		installation.Status.Stage = rhmiv1alpha1.StageName(rhmiv1alpha1.PhaseCompleted)
 		metrics.RHMIStatusAvailable.Set(1)
 		retryRequeue.RequeueAfter = 5 * time.Minute
 		if installation.Spec.RebalancePods {
@@ -503,7 +520,7 @@ func (r *RHMIReconciler) handleUninstall(installation *rhmiv1alpha1.RHMI, instal
 				if err != nil {
 					merr.Add(fmt.Errorf("Failed to create server client for %s: %w", productName, err))
 				}
-				phase, err := reconciler.Reconcile(context.TODO(), installation, productStatus, serverClient)
+				phase, err := reconciler.Reconcile(context.TODO(), installation, productStatus, serverClient, sku.ProductConfig{})
 				if err != nil {
 					merr.Add(fmt.Errorf("Failed to reconcile product %s: %w", productName, err))
 				}
@@ -741,7 +758,7 @@ func (r *RHMIReconciler) bootstrapStage(installation *rhmiv1alpha1.RHMI, configM
 	return phase, nil
 }
 
-func (r *RHMIReconciler) processStage(installation *rhmiv1alpha1.RHMI, stage *Stage, configManager config.ConfigReadWriter, log l.Logger) (rhmiv1alpha1.StatusPhase, error) {
+func (r *RHMIReconciler) processStage(installation *rhmiv1alpha1.RHMI, stage *Stage, configManager config.ConfigReadWriter, sku *sku.SKU, _ l.Logger) (rhmiv1alpha1.StatusPhase, error) {
 	incompleteStage := false
 	productVersionMismatchFound = false
 
@@ -749,7 +766,7 @@ func (r *RHMIReconciler) processStage(installation *rhmiv1alpha1.RHMI, stage *St
 	productsAux := make(map[rhmiv1alpha1.ProductName]rhmiv1alpha1.RHMIProductStatus)
 	installation.Status.Stage = stage.Name
 
-	for _, product := range stage.Products {
+	for productName, product := range stage.Products {
 		productLog := l.NewLoggerWithContext(l.Fields{l.ProductLogContext: product.Name})
 
 		reconciler, err := products.NewReconciler(product.Name, r.restConfig, configManager, installation, r.mgr, productLog)
@@ -768,7 +785,7 @@ func (r *RHMIReconciler) processStage(installation *rhmiv1alpha1.RHMI, stage *St
 		if err != nil {
 			return rhmiv1alpha1.PhaseFailed, fmt.Errorf("could not create server client: %w", err)
 		}
-		product.Status, err = reconciler.Reconcile(context.TODO(), installation, &product, serverClient)
+		product.Status, err = reconciler.Reconcile(context.TODO(), installation, &product, serverClient, sku.GetProduct(productName))
 
 		if err != nil {
 			if mErr == nil {
