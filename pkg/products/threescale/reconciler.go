@@ -185,7 +185,7 @@ func (r *Reconciler) VerifyVersion(installation *integreatlyv1alpha1.RHMI) bool 
 	)
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context, installation *integreatlyv1alpha1.RHMI, product *integreatlyv1alpha1.RHMIProductStatus, serverClient k8sclient.Client, _ sku.ProductConfig) (integreatlyv1alpha1.StatusPhase, error) {
+func (r *Reconciler) Reconcile(ctx context.Context, installation *integreatlyv1alpha1.RHMI, product *integreatlyv1alpha1.RHMIProductStatus, serverClient k8sclient.Client, productSKU sku.ProductConfig) (integreatlyv1alpha1.StatusPhase, error) {
 	r.log.Info("Start Reconciling")
 
 	operatorNamespace := r.Config.GetOperatorNamespace()
@@ -276,7 +276,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, installation *integreatlyv1a
 		}
 	}
 
-	phase, err = r.reconcileComponents(ctx, serverClient)
+	phase, err = r.reconcileComponents(ctx, serverClient, productSKU)
 	r.log.Infof("reconcileComponents", l.Fields{"phase": phase})
 	if err != nil || phase != integreatlyv1alpha1.PhaseCompleted {
 		events.HandleError(r.recorder, installation, phase, "Failed to reconcile components", err)
@@ -912,7 +912,7 @@ func (r *Reconciler) reconcileSMTPCredentials(ctx context.Context, serverClient 
 	return integreatlyv1alpha1.PhaseCompleted, nil
 }
 
-func (r *Reconciler) reconcileComponents(ctx context.Context, serverClient k8sclient.Client) (integreatlyv1alpha1.StatusPhase, error) {
+func (r *Reconciler) reconcileComponents(ctx context.Context, serverClient k8sclient.Client, productSKU sku.ProductConfig) (integreatlyv1alpha1.StatusPhase, error) {
 
 	fss, err := r.getBlobStorageFileStorageSpec(ctx, serverClient)
 	if err != nil {
@@ -958,6 +958,8 @@ func (r *Reconciler) reconcileComponents(ctx context.Context, serverClient k8scl
 			},
 		},
 	}
+
+	productSKU.Configure(apim)
 
 	antiAffinityRequired, err := resources.IsAntiAffinityRequired(ctx, serverClient)
 	if err != nil {

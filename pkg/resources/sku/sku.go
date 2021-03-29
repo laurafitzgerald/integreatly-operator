@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	v1alpha12 "github.com/3scale/3scale-operator/pkg/apis/apps/v1alpha1"
 	"github.com/integr8ly/integreatly-operator/apis/v1alpha1"
 	appsv1 "github.com/openshift/api/apps/v1"
 	appsv12 "k8s.io/api/apps/v1"
@@ -219,6 +220,16 @@ func (p *ProductConfig) Configure(obj metav1.Object) error {
 		replicas = t.Spec.Replicas
 		podTemplate = &t.Spec.Template
 		break
+	case *v1alpha12.APIManager:
+		var productionReplicas *int64
+		var stagingReplicas *int64
+		productionReplicas = t.Spec.Apicast.ProductionSpec.Replicas
+		stagingReplicas = t.Spec.Apicast.StagingSpec.Replicas
+		apicastReplicas := int64(p.resourceConfigs[obj.GetName()].Replicas)
+		if p.sku.isUpdated && *productionReplicas < apicastReplicas {
+			*productionReplicas = apicastReplicas
+			*stagingReplicas = apicastReplicas
+		}
 
 	default:
 		return errors.New(fmt.Sprintf("sku configuration can only be applied to Deployments, StatefulSets or Deployment Configs, found %s", reflect.TypeOf(obj)))
@@ -228,12 +239,12 @@ func (p *ProductConfig) Configure(obj metav1.Object) error {
 	if p.sku.isUpdated && *replicas < configReplicas {
 		*replicas = configReplicas
 	}
-	p.mutate(podTemplate, obj.GetName())
+	p.mutatePodTemplate(podTemplate, obj.GetName())
 
 	return nil
 }
 
-func (p *ProductConfig) mutate(temp *v13.PodTemplateSpec, name string) {
+func (p *ProductConfig) mutatePodTemplate(temp *v13.PodTemplateSpec, name string) {
 	resources := p.resourceConfigs[name].Resources
 	templateResources := &temp.Spec.Containers[0].Resources
 
