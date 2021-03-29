@@ -3,7 +3,7 @@ module github.com/integr8ly/integreatly-operator
 go 1.13
 
 require (
-	github.com/3scale/3scale-operator v0.6.0
+	github.com/3scale/3scale-operator v0.2.1-0.20201218152710-770fa292607c
 	// github.com/3scale/3scale-operator v0.2.1-0.20200730110533-c3b57b704d73
 	github.com/3scale/marin3r v0.7.0
 	github.com/Apicurio/apicurio-registry-operator v0.0.0-20200903111206-f9f14054bc16
@@ -31,11 +31,10 @@ require (
 	github.com/integr8ly/grafana-operator/v3 v3.6.0
 	github.com/integr8ly/keycloak-client v0.1.3-0.20210125112511-1972ece81982
 	github.com/keycloak/keycloak-operator v0.0.0-20210115090828-e5d4686bb8a4
-	github.com/matryer/moq v0.2.1 // indirect
 	github.com/onsi/ginkgo v1.15.0
 	github.com/onsi/gomega v1.10.2
 	github.com/openshift/api v3.9.1-0.20191031084152-11eee842dafd+incompatible
-	github.com/openshift/client-go v0.0.0-20210112165513-ebc401615f47
+	github.com/openshift/client-go v3.9.0+incompatible
 	github.com/openshift/cluster-samples-operator v0.0.0-20191113195805-9e879e661d71
 	github.com/operator-framework/operator-lifecycle-manager v0.17.0
 	// github.com/operator-framework/operator-marketplace v0.0.0-20200919233811-2d6d71892437
