@@ -36,106 +36,13 @@ func TestGetSKU(t *testing.T) {
 		validate func(*SKU, *testing.T)
 	}{
 		{
-			name: "ensure no error on no skuid found in config and default used",
+			name: "ensure error on no skuid found in config",
 			args: args{
 				SKUId:     "SKU_NOT_PRESENT_SKU",
 				SKUConfig: getSKUConfig(nil),
 				SKU:       pointerToSKU,
 			},
-			want: &SKU{
-				name: "default",
-				productConfigs: map[v1alpha1.ProductName]ProductConfig{
-					v1alpha1.Product3Scale: {
-						productName: v1alpha1.Product3Scale,
-						resourceConfigs: getResourceConfig(func(rcs map[string]ResourceConfig) {
-							rcs[BackendListenerName] = ResourceConfig{
-								Replicas: 3,
-								Resources: v13.ResourceRequirements{
-									Requests: corev1.ResourceList{
-										corev1.ResourceCPU:    resource.MustParse("0.35"),
-										corev1.ResourceMemory: resource.MustParse("450"),
-									},
-									Limits: corev1.ResourceList{
-										corev1.ResourceCPU:    resource.MustParse("0.45"),
-										corev1.ResourceMemory: resource.MustParse("500"),
-									},
-								},
-							}
-							rcs[BackendWorkerName] = ResourceConfig{
-								Replicas: 3,
-								Resources: v13.ResourceRequirements{
-									Requests: corev1.ResourceList{
-										corev1.ResourceCPU:    resource.MustParse("0.15"),
-										corev1.ResourceMemory: resource.MustParse("100"),
-									},
-									Limits: corev1.ResourceList{
-										corev1.ResourceCPU:    resource.MustParse("0.2"),
-										corev1.ResourceMemory: resource.MustParse("100"),
-									},
-								},
-							}
-							rcs[ApicastProductionName] = ResourceConfig{
-								Replicas: 3,
-								Resources: v13.ResourceRequirements{
-									Requests: corev1.ResourceList{
-										corev1.ResourceCPU:    resource.MustParse("0.3"),
-										corev1.ResourceMemory: resource.MustParse("250"),
-									},
-									Limits: corev1.ResourceList{
-										corev1.ResourceCPU:    resource.MustParse("0.3"),
-										corev1.ResourceMemory: resource.MustParse("300"),
-									},
-								},
-							}
-							rcs[ApicastStagingName] = ResourceConfig{
-								Replicas: 3,
-								Resources: v13.ResourceRequirements{
-									Requests: corev1.ResourceList{
-										corev1.ResourceCPU:    resource.MustParse("0.3"),
-										corev1.ResourceMemory: resource.MustParse("250"),
-									},
-									Limits: corev1.ResourceList{
-										corev1.ResourceCPU:    resource.MustParse("0.3"),
-										corev1.ResourceMemory: resource.MustParse("300"),
-									},
-								},
-							}
-						}),
-						sku: pointerToSKU,
-					},
-					v1alpha1.ProductRHSSOUser: {
-						productName: v1alpha1.ProductRHSSOUser,
-						resourceConfigs: getResourceConfig(func(rcs map[string]ResourceConfig) {
-							rcs[KeycloakName] = ResourceConfig{
-								Replicas: 3,
-								Resources: v13.ResourceRequirements{
-									Requests: corev1.ResourceList{
-										corev1.ResourceCPU:    resource.MustParse("0.75"),
-										corev1.ResourceMemory: resource.MustParse("1500"),
-									},
-									Limits: corev1.ResourceList{
-										corev1.ResourceCPU:    resource.MustParse("0.75"),
-										corev1.ResourceMemory: resource.MustParse("1500"),
-									},
-								},
-							}
-						}),
-						sku: pointerToSKU,
-					},
-					v1alpha1.ProductMarin3r: {
-						productName: v1alpha1.ProductMarin3r,
-						resourceConfigs: getResourceConfig(func(rcs map[string]ResourceConfig) {
-							rcs[RateLimitName] = ResourceConfig{
-								Replicas:  3,
-								Resources: v13.ResourceRequirements{},
-							}
-
-						}),
-						sku: pointerToSKU,
-					},
-				},
-			},
-			wantErr: false,
+			wantErr: true,
 		},
 		{
 			name: "test successful parsing of config map to sku object for DEV SKU",
@@ -148,9 +55,9 @@ func TestGetSKU(t *testing.T) {
 			want: &SKU{
 				name: DEVSKU,
 				productConfigs: map[v1alpha1.ProductName]ProductConfig{
-					v1alpha1.Product3Scale: {
-						productName: v1alpha1.Product3Scale,
-						resourceConfigs: getResourceConfig(func(rcs map[string]ResourceConfig) {
+					v1alpha1.Product3Scale: getProductConfig(func(pc ProductConfig) {
+						pc.productName = v1alpha1.Product3Scale
+						pc.resourceConfigs = getResourceConfig(func(rcs map[string]ResourceConfig) {
 							rcs[ApicastProductionName] = ResourceConfig{
 								Replicas: int32(1),
 								Resources: v13.ResourceRequirements{
@@ -167,27 +74,26 @@ func TestGetSKU(t *testing.T) {
 							rcs[ApicastStagingName] = ResourceConfig{0, v13.ResourceRequirements{}}
 							rcs[BackendListenerName] = ResourceConfig{0, v13.ResourceRequirements{}}
 							rcs[BackendWorkerName] = ResourceConfig{0, v13.ResourceRequirements{}}
+						})
+						pc.sku = pointerToSKU
 						}),
-						sku: pointerToSKU,
-					},
-					v1alpha1.ProductMarin3r: {
-						productName: v1alpha1.ProductMarin3r,
-						resourceConfigs: map[string]ResourceConfig{
-							RateLimitName: {0, v13.ResourceRequirements{}},
-						},
-						sku: pointerToSKU,
-					},
-					v1alpha1.ProductRHSSOUser: {
-						productName: v1alpha1.ProductRHSSOUser,
-						resourceConfigs: map[string]ResourceConfig{
-							KeycloakName: {0, v13.ResourceRequirements{}},
-						},
-						sku: pointerToSKU,
-					},
+					v1alpha1.ProductMarin3r: getProductConfig(func(pc ProductConfig) {
+						pc.productName = v1alpha1.ProductMarin3r
+						pc.resourceConfigs = getResourceConfig(func(rcs map[string]ResourceConfig) {
+							rcs[RateLimitName] = ResourceConfig{0, v13.ResourceRequirements{}}
+						})
+						pc.sku = pointerToSKU
+						}),
+					v1alpha1.ProductRHSSOUser: getProductConfig(func(pc ProductConfig) {
+						pc.productName = v1alpha1.ProductRHSSOUser
+						pc.resourceConfigs = getResourceConfig(func(rcs map[string]ResourceConfig) {
+							rcs[KeycloakName] = ResourceConfig{0, v13.ResourceRequirements{}}
+						})
+						pc.sku = pointerToSKU
+					}),
 				},
 				isUpdated: false,
-			},
-			wantErr: false,
+			}: false,
 			validate: func(sku *SKU, t *testing.T) {
 				gotReplicas := sku.GetProduct(v1alpha1.Product3Scale).GetReplicas(ApicastProductionName)
 				wantReplicas := int32(1)
@@ -654,6 +560,14 @@ func TestProductConfig_Configure(t *testing.T) {
 			}
 		})
 	}
+}
+
+func getProductConfig(modifyFn func(pc ProductConfig)) ProductConfig {
+	mock := ProductConfig{}
+	if modifyFn != nil {
+		modifyFn(mock)
+	}
+	return mock
 }
 
 func getResourceConfig(modifyFn func(rcs map[string]ResourceConfig)) map[string]ResourceConfig {
