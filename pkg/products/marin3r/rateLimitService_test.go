@@ -3,6 +3,7 @@ package marin3r
 import (
 	"context"
 	"fmt"
+	"github.com/integr8ly/integreatly-operator/pkg/resources/sku"
 	"testing"
 
 	integreatlyv1alpha1 "github.com/integr8ly/integreatly-operator/apis/v1alpha1"
@@ -23,6 +24,7 @@ func TestRateLimitService(t *testing.T) {
 	scenarios := []struct {
 		Name       string
 		Reconciler *RateLimitServiceReconciler
+		ProductConfig  sku.ProductConfig
 		InitObjs   []runtime.Object
 		Assert     func(k8sclient.Client, integreatlyv1alpha1.StatusPhase, error) error
 	}{
@@ -33,6 +35,7 @@ func TestRateLimitService(t *testing.T) {
 				RequestsPerUnit: 1,
 			},
 				&integreatlyv1alpha1.RHMI{}, "redhat-test-marin3r", "ratelimit-redis"),
+			ProductConfig: getProductConfig(func(pc sku.ProductConfig) {}),
 			InitObjs: []runtime.Object{
 				&corev1.Secret{
 					ObjectMeta: v1.ObjectMeta{
@@ -213,7 +216,8 @@ func TestRateLimitService(t *testing.T) {
 	for _, scenario := range scenarios {
 		t.Run(scenario.Name, func(t *testing.T) {
 			client := fake.NewFakeClientWithScheme(scheme, scenario.InitObjs...)
-			phase, err := scenario.Reconciler.ReconcileRateLimitService(context.TODO(), client)
+			// i think it's fine to pass an empty productconfig here if the Configure function is mocked somehow
+			phase, err := scenario.Reconciler.ReconcileRateLimitService(context.TODO(), client, scenario.ProductConfig)
 
 			if err := scenario.Assert(client, phase, err); err != nil {
 				t.Error(err)
@@ -295,4 +299,13 @@ func assertEnvs(assertions map[string]func(string) error) func(*appsv1.Deploymen
 
 		return nil
 	}
+}
+
+func getProductConfig(modifyFn func(pc sku.ProductConfig)) sku.ProductConfig {
+	// I can't set anything inside this mock because it only has unexported config
+	mock := sku.ProductConfig{}
+	if modifyFn != nil {
+		modifyFn(mock)
+	}
+	return mock
 }

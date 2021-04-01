@@ -31,6 +31,8 @@ type SKU struct {
 	isUpdated      bool
 }
 
+// I want to mock this option so that I don't need to call the configure function. that is already tested.
+//
 type ProductConfig struct {
 	productName     v1alpha1.ProductName
 	resourceConfigs map[string]ResourceConfig

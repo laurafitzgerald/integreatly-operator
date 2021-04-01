@@ -280,6 +280,7 @@ func (r *RateLimitServiceReconciler) reconcileDeployment(ctx context.Context, cl
 			return fmt.Errorf("failed to set zone topology spread constraints: %w", err)
 		}
 
+		// this configure function is already tested so I just want to mock that I guess
 		err = productConfig.Configure(deployment)
 		if err != nil {
 			return err
