@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/integr8ly/integreatly-operator/test/common"
 	. "github.com/onsi/ginkgo"
-	"os"
 )
 
 var _ = Describe("integreatly", func() {
@@ -29,7 +28,7 @@ var _ = Describe("integreatly", func() {
 
 		// get all automated tests
 		tests := []common.Tests{
-			{
+		/*	{
 				Type:      fmt.Sprintf("%s ALL TESTS", installType),
 				TestCases: common.GetAllTestCases(installType),
 			},
@@ -40,34 +39,34 @@ var _ = Describe("integreatly", func() {
 			{
 				Type:      fmt.Sprintf("%s IDP BASED", installType),
 				TestCases: common.GetIDPBasedTestCases(installType),
-			},
+			},*/
 			{
 				Type:      fmt.Sprintf("%s Functional", installType),
 				TestCases: FUNCTIONAL_TESTS,
 			},
-			{
+/*			{
 				Type:      fmt.Sprintf("%s SCALABILITY TESTS", installType),
 				TestCases: common.GetScalabilityTestCases(installType),
 			},
 			{
 				Type:      "FAILURE TESTS",
 				TestCases: common.FAILURE_TESTS,
-			},
+			},*/
 		}
 
-		if os.Getenv("MULTIAZ") == "true" {
+/*		if os.Getenv("MULTIAZ") == "true" {
 			tests = append(tests, common.Tests{
 				Type:      fmt.Sprintf("%s Multi AZ", installType),
 				TestCases: MULTIAZ_TESTS,
 			})
-		}
+		}*/
 
-		if os.Getenv("DESTRUCTIVE") == "true" {
+/*		if os.Getenv("DESTRUCTIVE") == "true" {
 			tests = append(tests, common.Tests{
 				Type:      "Destructive Tests",
 				TestCases: common.DESTRUCTIVE_TESTS,
 			})
-		}
+		}*/
 
 		for _, test := range tests {
 			Context(test.Type, func() {
