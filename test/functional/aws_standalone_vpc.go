@@ -272,7 +272,7 @@ func TestStandaloneVPCExists(t common.TestingTB, testingCtx *common.TestingConte
 
 	// update the _network create strategy in the aws strategy map and ensure
 	// this does not change the existing vpc
-	err = verifyCidrBlockUpdate(ctx, testingCtx, ec2Sess, strategyMap, clusterTag, expectedCidr)
+	err = verifyCidrBlockUpdate(ctx, testingCtx, ec2Sess, clusterTag, expectedCidr)
 	testErrors.updateCidrBlockError = err.(*networkConfigTestError).updateCidrBlockError
 
 	// if any error was found, fail the test
@@ -620,11 +620,23 @@ func verifyClusterRouteTables(session *ec2.EC2, clusterTag, vpcCidr string, peer
 
 // verify no new vpc is created when the cidr block is updated in the _network section of the aws
 // strategy map
-func verifyCidrBlockUpdate(ctx context.Context, testingCtx *common.TestingContext, session *ec2.EC2, stratMap *v1.ConfigMap, clusterTag, expectedCidr string) error {
+func verifyCidrBlockUpdate(ctx context.Context, testingCtx *common.TestingContext, session *ec2.EC2, clusterTag, expectedCidr string) error {
 	newErr := &networkConfigTestError{
 		updateCidrBlockError: []error{},
 	}
 
+	// get the aws strategy map again as it gets updated in the cluster.
+	// from the _network key
+	stratMap := &v1.ConfigMap{}
+	err := testingCtx.Client.Get(ctx, types.NamespacedName{
+		Namespace: common.RHMIOperatorNamespace,
+		Name:      strategyMapName,
+	}, stratMap)
+	if err != nil {
+		errMsg := fmt.Errorf("could not get strat map: %w", err)
+		newErr.updateCidrBlockError = append(newErr.updateCidrBlockError, errMsg)
+		return newErr
+	}
 	// get _network resource type
 	strat, err := getStrategyForResource(stratMap, resourceType, tier)
 
@@ -644,7 +656,7 @@ func verifyCidrBlockUpdate(ctx context.Context, testingCtx *common.TestingContex
 
 	originalCidrBlock := *vpcCreateConfig.CidrBlock
 
-	// update the cidr block
+	// update the cidr block to a dummy which shouldn't get applied to the vpc
 	vpcCreateConfig.CidrBlock = aws.String(dummyIpAddress)
 
 	// marshal create config
@@ -693,6 +705,8 @@ func verifyCidrBlockUpdate(ctx context.Context, testingCtx *common.TestingContex
 		return false, nil
 	})
 
+
+
 	// update the vpc CIDR block back to its original value
 	// update the cidr block
 	vpcCreateConfig.CidrBlock = aws.String(originalCidrBlock)
@@ -714,7 +728,7 @@ func verifyCidrBlockUpdate(ctx context.Context, testingCtx *common.TestingContex
 
 	// update config map
 	if err := testingCtx.Client.Update(ctx, stratMap); err != nil {
-		errMsg := fmt.Errorf("failed to update aws strategy map: %w", err)
+		errMsg := fmt.Errorf("failed to update aws strategy map when resetting the cidr block after : %w", err)
 		newErr.updateCidrBlockError = append(newErr.updateCidrBlockError, errMsg)
 		return newErr
 	}
@@ -730,6 +744,7 @@ func verifyCidrBlockUpdate(ctx context.Context, testingCtx *common.TestingContex
 		newErr.updateCidrBlockError = append(newErr.updateCidrBlockError, errMsg)
 		return newErr
 	}
+
 
 	return newErr
 }
